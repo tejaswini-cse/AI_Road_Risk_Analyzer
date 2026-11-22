@@ -104,8 +104,9 @@ def get_routes(
 
     params = {
         "alternatives": "true",
-        "overview": "false",
-        "steps": "false"
+        "overview": "full",
+        "geometries": "geojson",
+        "steps": "true"
     }
 
     response = requests.get(
@@ -147,7 +148,9 @@ def build_route_candidates(
             {
                 "distance": route["distance"],
                 "duration": route["duration"],
-                "real_route": True
+                "real_route": True,
+                "geometry": route.get("geometry"),
+                "steps": route.get("legs", [])
             }
 
             for route in osrm_routes[:3]
@@ -177,19 +180,25 @@ def build_route_candidates(
             {
                 "distance": base["distance"],
                 "duration": base["duration"],
-                "real_route": True
+                "real_route": True,
+                "geometry": base.get("geometry"),
+                "steps": base.get("legs", [])
             },
 
             {
                 "distance": second["distance"],
                 "duration": second["duration"],
-                "real_route": True
+                "real_route": True,
+                "geometry": second.get("geometry"),
+                "steps": second.get("legs", [])
             },
 
             {
                 "distance": estimated_distance,
                 "duration": estimated_duration,
-                "real_route": False
+                "real_route": False,
+                "geometry": None,
+                "steps": []
             }
 
         ]
@@ -205,7 +214,9 @@ def build_route_candidates(
         {
             "distance": base["distance"],
             "duration": base["duration"],
-            "real_route": True
+            "real_route": True,
+            "geometry": base.get("geometry"),
+            "steps": base.get("legs", [])
         }
 
     ]
@@ -222,7 +233,9 @@ def build_route_candidates(
             base["duration"]
             * rng.uniform(1.05, 1.12),
 
-        "real_route": False
+        "real_route": False,
+        "geometry": None,
+        "steps": []
 
     })
 
@@ -238,7 +251,9 @@ def build_route_candidates(
             base["duration"]
             * rng.uniform(1.09, 1.20),
 
-        "real_route": False
+        "real_route": False,
+        "geometry": None,
+        "steps": []
 
     })
 
@@ -719,7 +734,26 @@ def analyze_route(
                 ),
 
             "real_route":
-                route["real_route"]
+                route["real_route"],
+
+            "geometry":
+                route.get("geometry"),
+
+            "steps":
+                route.get("steps", []),
+
+            "route_description":
+                " → ".join(
+                    [
+                        item
+                        for item in [
+                            (step.get("summary") or "").strip()
+                            for leg in route.get("steps", [])
+                            for step in [leg]
+                        ]
+                        if item
+                    ][:6]
+                )
 
         })
 
