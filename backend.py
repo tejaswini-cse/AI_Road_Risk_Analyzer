@@ -40,7 +40,6 @@ def stable_seed(start, destination):
 # =========================================================
 # GEOCODING
 # =========================================================
-
 def geocode_location(location):
 
     location = location.strip()
@@ -50,55 +49,35 @@ def geocode_location(location):
 
     url = "https://nominatim.openstreetmap.org/search"
 
-    headers = {
-        "User-Agent": "AI-Road-Risk-Analyzer/1.0",
-        "Accept": "application/json"
+    params = {
+        "q": location,
+        "format": "jsonv2",
+        "addressdetails": 1,
+        "limit": 10,
+        "countrycodes": "in",
+        "accept-language": "en"
     }
 
-    # Try the user's exact location first
-    queries = [
-        location,
-        f"{location}, Karnataka, India",
-        f"{location}, Karnataka"
-    ]
+    headers = {
+        "User-Agent": "AI-Road-Risk-Analyzer/1.0"
+    }
 
-    data = []
+    response = requests.get(
+        url,
+        params=params,
+        headers=headers,
+        timeout=20
+    )
 
-    for query in queries:
+    response.raise_for_status()
 
-        params = {
-            "q": query,
-            "format": "jsonv2",
-            "addressdetails": 1,
-            "limit": 10,
-            "countrycodes": "in",
-            "accept-language": "en",
-            "dedupe": 1
-        }
-
-        response = requests.get(
-            url,
-            params=params,
-            headers=headers,
-            timeout=20
-        )
-
-        response.raise_for_status()
-
-        try:
-            current_data = response.json()
-        except ValueError:
-            continue
-
-        if current_data:
-            data = current_data
-            break
+    data = response.json()
 
     if not data:
         raise ValueError(
             f"Location not found: {location}. "
-            "Try entering the place with its district, "
-            "for example: Kankapura, Ramanagara, Karnataka."
+            "For smaller places, enter Village/Town, "
+            "Taluk, District, Karnataka."
         )
 
     # Find the result matching the most entered
@@ -113,14 +92,10 @@ def geocode_location(location):
     def match_score(item):
 
         display_name = item.get(
-            "display_name",
-            ""
+            "display_name", ""
         )
 
-        address = item.get(
-            "address",
-            {}
-        )
+        address = item.get("address", {})
 
         address_text = " ".join(
             str(value)
@@ -128,14 +103,11 @@ def geocode_location(location):
         )
 
         candidate_text = (
-            display_name
-            + " "
-            + address_text
+            display_name + " " + address_text
         ).lower()
 
         matches = sum(
-            1
-            for part in requested_parts
+            1 for part in requested_parts
             if part in candidate_text
         )
 
@@ -154,7 +126,6 @@ def geocode_location(location):
         float(best_result["lat"]),
         float(best_result["lon"])
     )
-
 # =========================================================
 # OSRM ROUTING
 # =========================================================
@@ -188,23 +159,14 @@ def get_routes(
 
     response.raise_for_status()
 
-    try:
-        data = response.json()
-    except ValueError:
-        raise ValueError(
-            "The routing service returned an invalid response. "
-            "Please try the route again in a few seconds."
-        )
+    data = response.json()
 
     if data.get("code") != "Ok":
         raise ValueError(
             "Could not calculate route."
         )
 
-    return data.get(
-        "routes",
-        []
-    )
+    return data.get("routes", [])
 
 
 # =========================================================
@@ -842,25 +804,17 @@ def analyze_route(
     # =====================================================
 
     actual_map_routes = [
-        route
-        for route in analyzed_routes
+        route for route in analyzed_routes
         if (
             route.get("real_route") is True
-            and isinstance(
-                route.get("geometry"),
-                dict
-            )
+            and isinstance(route.get("geometry"), dict)
             and len(
-                route["geometry"].get(
-                    "coordinates",
-                    []
-                )
+                route["geometry"].get("coordinates", [])
             ) >= 2
         )
     ]
 
     if not actual_map_routes:
-
         raise ValueError(
             "No actual routes with map geometry are available."
         )
@@ -869,7 +823,6 @@ def analyze_route(
         actual_map_routes,
         key=lambda route: route["risk_score"]
     )
-
     # =====================================================
     # RETURN RESULT
     # =====================================================
