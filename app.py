@@ -378,7 +378,8 @@ if analyze_button:
 
                     st.metric(
                         "Travel Time",
-                        f"{recommended['duration_min']} min"
+                        f"{int(recommended['duration_min'] // 60)} hr "
+                        f"{int(recommended['duration_min'] % 60)} min"
                     )
 
                 with c3:
@@ -483,11 +484,11 @@ if analyze_button:
 
                     with r2:
 
-                        st.metric(
-                            "Travel Time",
-                            f"{route['duration_min']} min"
-                        )
-
+                       st.metric(
+                          "Travel Time",
+                          f"{int(route['duration_min'] // 60)} hr "
+                          f"{int(route['duration_min'] % 60)} min"
+                       )
                     with r3:
 
                         st.metric(
