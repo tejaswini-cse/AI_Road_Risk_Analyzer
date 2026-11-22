@@ -50,10 +50,12 @@ def geocode_location(location):
     url = "https://nominatim.openstreetmap.org/search"
 
     params = {
-        "q": f"{location}, India",
-        "format": "json",
-        "limit": 1,
-        "countrycodes": "in"
+        "q": location,
+        "format": "jsonv2",
+        "addressdetails": 1,
+        "limit": 10,
+        "countrycodes": "in",
+        "accept-language": "en"
     }
 
     headers = {
@@ -64,7 +66,7 @@ def geocode_location(location):
         url,
         params=params,
         headers=headers,
-        timeout=15
+        timeout=20
     )
 
     response.raise_for_status()
@@ -73,17 +75,57 @@ def geocode_location(location):
 
     if not data:
         raise ValueError(
-            f"Location not found in India: {location}"
+            f"Location not found: {location}. "
+            "For smaller places, enter Village/Town, "
+            "Taluk, District, Karnataka."
         )
 
-    return (
-        float(data[0]["lat"]),
-        float(data[0]["lon"])
+    # Find the result matching the most entered
+    # location details.
+
+    requested_parts = [
+        part.strip().lower()
+        for part in location.split(",")
+        if part.strip()
+    ]
+
+    def match_score(item):
+
+        display_name = item.get(
+            "display_name", ""
+        )
+
+        address = item.get("address", {})
+
+        address_text = " ".join(
+            str(value)
+            for value in address.values()
+        )
+
+        candidate_text = (
+            display_name + " " + address_text
+        ).lower()
+
+        matches = sum(
+            1 for part in requested_parts
+            if part in candidate_text
+        )
+
+        importance = float(
+            item.get("importance") or 0
+        )
+
+        return matches, importance
+
+    best_result = max(
+        data,
+        key=match_score
     )
-        
 
-
-
+    return (
+        float(best_result["lat"]),
+        float(best_result["lon"])
+    )
 # =========================================================
 # OSRM ROUTING
 # =========================================================
