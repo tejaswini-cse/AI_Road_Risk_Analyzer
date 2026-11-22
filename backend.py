@@ -40,6 +40,7 @@ def stable_seed(start, destination):
 # =========================================================
 # GEOCODING
 # =========================================================
+
 def geocode_location(location):
 
     location = location.strip()
@@ -71,7 +72,14 @@ def geocode_location(location):
 
     response.raise_for_status()
 
-    data = response.json()
+    # Safely handle non-JSON responses
+    try:
+        data = response.json()
+    except ValueError:
+        raise ValueError(
+            "The location service returned an invalid response. "
+            "Please wait a few seconds and try again."
+        )
 
     if not data:
         raise ValueError(
@@ -92,10 +100,14 @@ def geocode_location(location):
     def match_score(item):
 
         display_name = item.get(
-            "display_name", ""
+            "display_name",
+            ""
         )
 
-        address = item.get("address", {})
+        address = item.get(
+            "address",
+            {}
+        )
 
         address_text = " ".join(
             str(value)
@@ -103,11 +115,14 @@ def geocode_location(location):
         )
 
         candidate_text = (
-            display_name + " " + address_text
+            display_name
+            + " "
+            + address_text
         ).lower()
 
         matches = sum(
-            1 for part in requested_parts
+            1
+            for part in requested_parts
             if part in candidate_text
         )
 
@@ -126,6 +141,8 @@ def geocode_location(location):
         float(best_result["lat"]),
         float(best_result["lon"])
     )
+
+
 # =========================================================
 # OSRM ROUTING
 # =========================================================
@@ -159,14 +176,23 @@ def get_routes(
 
     response.raise_for_status()
 
-    data = response.json()
+    try:
+        data = response.json()
+    except ValueError:
+        raise ValueError(
+            "The routing service returned an invalid response. "
+            "Please try the route again in a few seconds."
+        )
 
     if data.get("code") != "Ok":
         raise ValueError(
             "Could not calculate route."
         )
 
-    return data.get("routes", [])
+    return data.get(
+        "routes",
+        []
+    )
 
 
 # =========================================================
@@ -804,17 +830,25 @@ def analyze_route(
     # =====================================================
 
     actual_map_routes = [
-        route for route in analyzed_routes
+        route
+        for route in analyzed_routes
         if (
             route.get("real_route") is True
-            and isinstance(route.get("geometry"), dict)
+            and isinstance(
+                route.get("geometry"),
+                dict
+            )
             and len(
-                route["geometry"].get("coordinates", [])
+                route["geometry"].get(
+                    "coordinates",
+                    []
+                )
             ) >= 2
         )
     ]
 
     if not actual_map_routes:
+
         raise ValueError(
             "No actual routes with map geometry are available."
         )
@@ -823,6 +857,7 @@ def analyze_route(
         actual_map_routes,
         key=lambda route: route["risk_score"]
     )
+
     # =====================================================
     # RETURN RESULT
     # =====================================================
