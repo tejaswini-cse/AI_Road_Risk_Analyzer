@@ -12,7 +12,6 @@ import requests
 
 MODEL_PATH = os.path.join(
     os.path.dirname(__file__),
-    "model",
     "road_risk_model.joblib"
 )
 
