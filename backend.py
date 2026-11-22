@@ -71,10 +71,17 @@ def geocode_location(location):
 
     data = response.json()
 
-    if
+    if not data:
+        raise ValueError(
+            f"Location not found in India: {location}"
+        )
 
-    
-    
+    return (
+        float(data[0]["lat"]),
+        float(data[0]["lon"])
+    )
+        
+
 
 
 # =========================================================
