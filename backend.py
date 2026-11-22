@@ -757,44 +757,35 @@ def analyze_route(
 
         })
 
-    # -----------------------------------------------------
-    # AI recommendation
-    # -----------------------------------------------------
-# AI recommendation
-# Select the safest route only from actual routes
-# that have genuine map geometry.
+    # =====================================================
+    # AI RECOMMENDATION
+    # =====================================================
 
-actual_map_routes = [
-    route for route in analyzed_routes
-    if (
-        route.get("real_route") is True
-        and isinstance(route.get("geometry"), dict)
-        and len(
-            route["geometry"].get("coordinates", [])
-        ) >= 2
+    actual_map_routes = [
+        route for route in analyzed_routes
+        if (
+            route.get("real_route") is True
+            and isinstance(route.get("geometry"), dict)
+            and len(
+                route["geometry"].get("coordinates", [])
+            ) >= 2
+        )
+    ]
+
+    if not actual_map_routes:
+        raise ValueError(
+            "No actual routes with map geometry are available."
+        )
+
+    recommended_route = min(
+        actual_map_routes,
+        key=lambda route: route["risk_score"]
     )
-]
-
-if not actual_map_routes:
-    raise ValueError(
-        "No actual routes with map geometry are available."
-    )
-
-recommended_route = min(
-    actual_map_routes,
-    key=lambda route: route["risk_score"]
-)
-  
-    # -----------------------------------------------------
-    # Return result
-    # -----------------------------------------------------
+    # =====================================================
+    # RETURN RESULT
+    # =====================================================
 
     return {
-
-        "routes":
-            analyzed_routes,
-
-        "recommended_route":
-            recommended_route
-
+        "routes": analyzed_routes,
+        "recommended_route": recommended_route
     }
