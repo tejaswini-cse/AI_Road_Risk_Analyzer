@@ -50,42 +50,55 @@ def geocode_location(location):
 
     url = "https://nominatim.openstreetmap.org/search"
 
-    params = {
-        "q": location,
-        "format": "jsonv2",
-        "addressdetails": 1,
-        "limit": 10,
-        "countrycodes": "in",
-        "accept-language": "en"
-    }
-
     headers = {
-        "User-Agent": "AI-Road-Risk-Analyzer/1.0"
+        "User-Agent": "AI-Road-Risk-Analyzer/1.0",
+        "Accept": "application/json"
     }
 
-    response = requests.get(
-        url,
-        params=params,
-        headers=headers,
-        timeout=20
-    )
+    # Try the user's exact location first
+    queries = [
+        location,
+        f"{location}, Karnataka, India",
+        f"{location}, Karnataka"
+    ]
 
-    response.raise_for_status()
+    data = []
 
-    # Safely handle non-JSON responses
-    try:
-        data = response.json()
-    except ValueError:
-        raise ValueError(
-            "The location service returned an invalid response. "
-            "Please wait a few seconds and try again."
+    for query in queries:
+
+        params = {
+            "q": query,
+            "format": "jsonv2",
+            "addressdetails": 1,
+            "limit": 10,
+            "countrycodes": "in",
+            "accept-language": "en",
+            "dedupe": 1
+        }
+
+        response = requests.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=20
         )
+
+        response.raise_for_status()
+
+        try:
+            current_data = response.json()
+        except ValueError:
+            continue
+
+        if current_data:
+            data = current_data
+            break
 
     if not data:
         raise ValueError(
             f"Location not found: {location}. "
-            "For smaller places, enter Village/Town, "
-            "Taluk, District, Karnataka."
+            "Try entering the place with its district, "
+            "for example: Kankapura, Ramanagara, Karnataka."
         )
 
     # Find the result matching the most entered
@@ -141,7 +154,6 @@ def geocode_location(location):
         float(best_result["lat"]),
         float(best_result["lon"])
     )
-
 
 # =========================================================
 # OSRM ROUTING
