@@ -40,15 +40,20 @@ def stable_seed(start, destination):
 # =========================================================
 # GEOCODING
 # =========================================================
-
 def geocode_location(location):
+
+    location = location.strip()
+
+    if not location:
+        raise ValueError("Please enter a location.")
 
     url = "https://nominatim.openstreetmap.org/search"
 
     params = {
-        "q": location,
+        "q": f"{location}, India",
         "format": "json",
-        "limit": 1
+        "limit": 1,
+        "countrycodes": "in"
     }
 
     headers = {
@@ -66,15 +71,10 @@ def geocode_location(location):
 
     data = response.json()
 
-    if not data:
-        raise ValueError(
-            f"Location not found: {location}"
-        )
+    if
 
-    return (
-        float(data[0]["lat"]),
-        float(data[0]["lon"])
-    )
+    
+    
 
 
 # =========================================================
